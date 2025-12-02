@@ -6,6 +6,17 @@ from typing import List
 
 import unicodedata
 import re
+import os
+
+WORKSPACE_DIR = os.getcwd() 
+
+DATA_DIR = os.path.join(WORKSPACE_DIR, "data")
+TICKERS_DIR = os.path.join(DATA_DIR, "tickers")
+
+os.makedirs(TICKERS_DIR, exist_ok=True)
+os.makedirs(DATA_DIR, exist_ok=True)
+
+
 
 def clean_text(s):
     if pd.isna(s):
@@ -58,11 +69,13 @@ def get_historical_prices(stock_list: List[str], start_date: str, end_date: str)
 
 if __name__ == "__main__":
 
+    tickers_list = get_tickers_sector_from_wp()['symbol'].to_list()
     #Generate and safe the csv file of the tickers list and the company sector
     trading_universe = get_tickers_sector_from_wp()
-    trading_universe.to_csv("../data/trading_universe.csv", index=False)
+    trading_universe.to_csv(os.path.join(DATA_DIR, "trading_universe.csv"), index=False)
 
-    #Generate the csv file of historical prices for the considered trading universe
-    tickers_list = get_tickers_sector_from_wp()['symbol'].to_list()
-    historical_prices = get_historical_prices(tickers_list, start_date='2025-01-01', end_date='2025-12-31')
-    historical_prices.to_csv("../data/raw/historical_prices.csv")
+
+    for ticker in tickers_list:
+        historical_prices = get_historical_prices([ticker], start_date='2025-01-01', end_date='2025-12-31')
+        historical_prices.to_csv(os.path.join(TICKERS_DIR, f"{ticker}.csv"))
+
