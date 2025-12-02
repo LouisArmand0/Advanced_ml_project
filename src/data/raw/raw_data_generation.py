@@ -60,9 +60,17 @@ if __name__ == "__main__":
 
     #Generate and safe the csv file of the tickers list and the company sector
     trading_universe = get_tickers_sector_from_wp()
-    trading_universe.to_csv("../data/trading_universe.csv", index=False)
+    trading_universe.to_csv("trading_universe.csv")
 
     #Generate the csv file of historical prices for the considered trading universe
-    tickers_list = get_tickers_sector_from_wp()['symbol'].to_list()
-    historical_prices = get_historical_prices(tickers_list, start_date='2025-01-01', end_date='2025-12-31')
-    historical_prices.to_csv("../data/raw/historical_prices.csv")
+    tickers_list = get_tickers_sector_from_wp()['symbol'].to_list() + ["^GSPC"] #also download S&P 500 prices
+    historical_prices = get_historical_prices(tickers_list, start_date='2010-01-01', end_date='2025-12-31')
+
+    if isinstance(historical_prices.index, pd.PeriodIndex):
+        historical_prices.index = historical_prices.index.to_timestamp()
+    historical_prices = historical_prices.sort_index(axis=1)
+    historical_prices.columns = [f"{ticker.lower()}_{field.lower()}" for ticker, field in historical_prices.columns]
+    historical_prices.columns = [
+        col.replace("^gspc", "spy") for col in historical_prices.columns
+    ]
+    historical_prices.to_csv("historical_prices.csv")
