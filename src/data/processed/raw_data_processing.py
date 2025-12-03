@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from typing import List
-
+import os
 
 def compute_returns(prices: pd.DataFrame, return_type: str) -> pd.DataFrame:
     """Compute simple or log returns."""
@@ -162,7 +162,10 @@ def compute_macd(ret_df: pd.DataFrame,
 
 if __name__ == "__main__":
 
-    tickers_stock = pd.read_csv('src/data/raw/trading_universe.csv')['symbol'].to_list()
+    file_path_ticker = os.path.join(os.path.dirname(__file__), '../data/raw/trading_universe.csv')
+    tickers_stock = pd.read_csv(file_path_ticker)['symbol'].to_list()
+
+    file_path_prices = os.path.join(os.path.dirname(__file__), '../data/raw/historical_prices.csv')
     prices = pd.read_csv("src/data/raw/historical_prices.csv").set_index("Date").filter(like="_close")
 
     adj_returns = compute_vol_adjusted_returns(prices)

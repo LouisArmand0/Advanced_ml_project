@@ -1,7 +1,7 @@
 import networkx as nx
 import pandas as pd
 import numpy as np
-
+import os
 import matplotlib.pyplot as plt
 
 def compute_adj_matrix_based_on_sector(sector_df: pd.DataFrame, plot: bool) -> nx.Graph:
@@ -19,7 +19,7 @@ def compute_adj_matrix_based_on_sector(sector_df: pd.DataFrame, plot: bool) -> n
                     font_weight='bold', font_color='black', pos=nx.spring_layout(graph, k=.5))
             plt.title('Stocks Graph by Sector')
             plt.show()
-        return graph
+        return adj_matrix, graph
 
 def compute_adj_matrix_based_on_correlation(ret_df: pd.DataFrame, threshold: float, plot: bool) -> nx.Graph:
     corr_df = ret_df.corr(method="spearman")
@@ -44,15 +44,17 @@ def compute_adj_matrix_based_on_correlation(ret_df: pd.DataFrame, threshold: flo
                 font_weight='bold', font_color='black', pos=nx.spring_layout(graph, k=.5))
         ax.set_title(r'Stocks Graph ($|\rho| \geq {}$)'.format(threshold), fontsize=16)
         plt.show()
-    return graph
+    return adj_matrix, graph
 
 
 
 if __name__ == '__main__':
-    sector_df = pd.read_csv('src/data/raw/trading_universe.csv').set_index('symbol')
-    graph_sector = compute_adj_matrix_based_on_sector(sector_df, True)
+    file_path = os.path.join(os.path.dirname(__file__), '../data/raw/trading_universe.csv')
+    sector_df = pd.read_csv(file_path).set_index('symbol')
+    adj_matrix, graph_sector = compute_adj_matrix_based_on_sector(sector_df, True)
 
-    ret_df = pd.read_csv('src/data/raw/historical_prices.csv').set_index(['Date'])
+    file_path = os.path.join(os.path.dirname(__file__), '../data/raw/historical_prices.csv')
+    ret_df = pd.read_csv(file_path).set_index(['Date'])
     ret_df = ret_df.filter(like="_close")
-    graph_corr = compute_adj_matrix_based_on_correlation(ret_df, .85, True)
+    adj, graph_corr = compute_adj_matrix_based_on_correlation(ret_df, .85, True)
 
