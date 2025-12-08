@@ -70,7 +70,7 @@ def compute_beta_to_market(ret_df: pd.DataFrame,
         var = ret_df[f'{ticker_market}_close'].rolling(lookback, min_periods=lookback).var()
         beta = cov / var
 
-        beta_dict[f'beta_to_market_{stock.lower()}'] = beta
+        beta_dict[f'{stock.lower()}_beta_to_market_{lookback}'] = beta
 
     return pd.DataFrame(beta_dict)
 
@@ -84,7 +84,7 @@ def compute_alpha_to_market(ret_df: pd.DataFrame,
     alpha = ret_df[stock_col].sub(ret_df[market_col], axis=0).rolling(lookback, min_periods=lookback).mean()
 
     # rename columns
-    alpha.columns = [f'alpha_{t.lower()}_{lookback}' for t in tickers_stock]
+    alpha.columns = [f'{t.lower()}_alpha_{lookback}' for t in tickers_stock]
 
     return alpha
 
@@ -104,7 +104,7 @@ def compute_alpha_variance_ratio(ret_df: pd.DataFrame,
 
     # alpha variance ratio
     avr = rolling_var_alpha / rolling_var_stock
-    avr.columns = [f'alpha_var_ratio_{t.lower()}_{lookback}' for t in tickers_stock]
+    avr.columns = [f'{t.lower()}_alpha_var_ratio_{lookback}' for t in tickers_stock]
 
     return avr
 
@@ -136,7 +136,7 @@ def compute_cti(ret_df: pd.DataFrame, lookback: int) -> pd.DataFrame:
         col.lower().replace("close_", "").replace("_close", "")
         for col in ret_df.columns
     ]
-    cti.columns = [f"cti_{name}_{lookback}" for name in clean_names]
+    cti.columns = [f"{name.lower()}_cti_{lookback}" for name in clean_names]
 
     return cti
 
@@ -156,7 +156,7 @@ def compute_macd(ret_df: pd.DataFrame,
         ema_long = price.ewm(span=long_window, adjust=False).mean()
 
         macd = ema_short - ema_long
-        macd_dict[f'macd_{short_window}_{long_window}_{ticker.lower()}'] = macd
+        macd_dict[f'{ticker.lower()}_macd_{short_window}_{long_window}'] = macd
 
     return pd.DataFrame(macd_dict, index=ret_df.index)
 
