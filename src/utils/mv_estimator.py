@@ -50,6 +50,7 @@ class MeanVariance(BaseEstimator):
 
     def predict(self, X):
         if self.A==1:
+            # Imposes that the sum of weights equals to 1, i.e long short portfolio
             T,N = X.shape
             A = np.ones(N)
         else:
