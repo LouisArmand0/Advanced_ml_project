@@ -10,7 +10,6 @@ def test_day(df):
     return int(len(df) / len(df.asfreq("D"))) == 1
 
 def sharpe_ratio(df, num_period_per_year=None):
-    num_period_per_year = None
     if test_monthly(df):
         num_period_per_year = 12
     if test_bday(df):
