@@ -2,7 +2,9 @@ import pandas as pd
 import numpy as np
 import os
 from pathlib import Path
-from typing import List
+from dataclasses import dataclass
+from typing import List, Tuple, TypedDict
+
 
 
 def getting_data_for_ticker_list(ticker_list: List[str]) -> pd.DataFrame:
@@ -192,4 +194,117 @@ def compute_macd(ret_df: pd.DataFrame,
     df[f'macd_{short_window}_{long_window}'] = df.groupby('stock_name', group_keys=False).apply(macd_calc)
 
     return df[['date', 'stock_name', f'macd_{short_window}_{long_window}']].dropna().reset_index(drop=True)
+
+
+
+# Functions to be called in other scripts to compute all the desired features
+
+
+class FeatureParams(TypedDict, total=False):
+    beta_to_market: List[int]
+    alpha_to_market: List[int]
+    macd: List[Tuple[int, int]]
+    cti: List[int]
+    alpha_variance_ratio: List[int]
+
+def compute_features(ret: pd.DataFrame, params: FeatureParams, wide=True):
+
+    features = []
+    if 'beta_to_market' in params.keys():
+        beta_to_mkt_list = []
+        for lookback in params['beta_to_market']:
+            temp = compute_beta_to_market(
+                ret_df=ret,
+                ticker_market="spy",
+                lookback=lookback
+            )
+            beta_to_mkt_list.append(temp)
+
+        beta_to_mkt = beta_to_mkt_list[0]
+        if len(beta_to_mkt_list) > 1:
+            for beta_df in beta_to_mkt_list[1:]:
+                beta_to_mkt = pd.merge(beta_to_mkt, beta_df, on=['date', 'stock_name'], how='inner')
+        features.append(beta_to_mkt)
+
+    if 'alpha_to_market' in params.keys():
+        alpha_to_mkt_list = []
+        for lookback in params['alpha_to_market']:
+            alpha_to_mkt_list.append(compute_alpha_to_market(
+                ret_df=ret,
+                ticker_market="spy",
+                lookback=lookback
+            ))
+        alpha_to_mkt = alpha_to_mkt_list[0]
+
+        if len(alpha_to_mkt_list) > 1:
+            for alpha_df in alpha_to_mkt_list[1:]:
+                alpha_to_mkt = pd.merge(alpha_to_mkt, alpha_df, on=['date', 'stock_name'], how='inner')
+        features.append(alpha_to_mkt)
+
+    if 'macd' in params.keys():
+        macd_list = []
+        for c in params['macd']:
+            macd_list.append(compute_macd(
+                ret_df=ret,
+                short_window=c[0],
+                long_window=c[1]
+            ))
+        macd = macd_list[0]
+
+        if len(macd_list) > 1:
+            for macd_df in macd_list[1:]:
+                macd = pd.merge(macd, macd_df, on=['date', 'stock_name'], how='inner')
+        features.append(macd)
+
+    if 'cti' in params.keys():
+        cti_list = []
+        for c in params['cti']:
+            cti_list.append(
+                compute_cti(
+                    ret_df=ret,
+                    lookback=c,
+                )
+            )
+        cti = cti_list[0]
+        if len(cti_list) > 1:
+            for cti_df in cti_list[1:]:
+                cti = pd.merge(cti, cti_df, on=['date', 'stock_name'], how='inner')
+        features.append(cti)
+
+    if 'alpha_variance_ratio' in params.keys():
+        alpha_var_list = []
+        for lookback in params['alpha_variance_ratio']:
+            alpha_var_list.append(compute_alpha_variance_ratio(
+                ret_df=ret,
+                ticker_market="spy",
+                window=lookback,
+            ))
+
+        alpha_var = alpha_var_list[0]
+
+        if len(alpha_var_list) > 1:
+            for alpha_var_df in alpha_var_list[1:]:
+                alpha_var = pd.merge(alpha_var, alpha_var_df, on=['date', 'stock_name'], how='inner')
+        features.append(alpha_var)
+
+    # Setting data
+    X_full = features[0]
+
+    for c in features[1:]:
+        X_full = pd.merge(X_full, c, on=['date', 'stock_name'], how='inner')
+    X = X_full.sort_values(by=['date'], ascending=True).reset_index(drop=True)
+
+    if wide:
+        features = [c for c in X_full.columns if c not in ["date", "stock_name"]]
+        wide_list = []
+
+        for feat in features:
+            temp = X_full.pivot(index="date", columns="stock_name", values=feat)
+            temp.columns = [f"{feat}_{c}" for c in temp.columns]
+            wide_list.append(temp)
+
+        X = pd.concat(wide_list, axis=1).dropna(axis=1, how='any')
+    return X
+
+
 
