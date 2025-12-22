@@ -57,5 +57,6 @@ class MeanVariance(BaseEstimator):
             A = self.A
         h = compute_batch_holding(X, self.V_, A, constant_risk=self.constant_risk)
         return h
+
     def score(self, X, y):
         return sharpe_ratio(np.sum(X*y, axis=1))
