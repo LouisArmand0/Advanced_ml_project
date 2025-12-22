@@ -6,6 +6,17 @@ from typing import List
 
 import unicodedata
 import re
+import os
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+
+
+DATA_DIR = os.path.join(ROOT, "data")
+TICKERS_DIR = os.path.join(DATA_DIR, "tickers")
+
+os.makedirs(TICKERS_DIR, exist_ok=True)
+os.makedirs(DATA_DIR, exist_ok=True)
 
 def clean_text(s):
     if pd.isna(s):
@@ -58,19 +69,15 @@ def get_historical_prices(stock_list: List[str], start_date: str, end_date: str)
 
 if __name__ == "__main__":
 
-    #Generate and safe the csv file of the tickers list and the company sector
+    #Generate and save the csv file of the tickers list and the company sector
     trading_universe = get_tickers_sector_from_wp()
-    trading_universe.to_csv("trading_universe.csv")
+    trading_universe.to_parquet(f"{DATA_DIR}/trading_universe.parquet", index=True)
 
     #Generate the csv file of historical prices for the considered trading universe
     tickers_list = get_tickers_sector_from_wp()['symbol'].to_list() + ["^GSPC"] #also download S&P 500 prices
-    historical_prices = get_historical_prices(tickers_list, start_date='2010-01-01', end_date='2025-12-31')
 
-    if isinstance(historical_prices.index, pd.PeriodIndex):
-        historical_prices.index = historical_prices.index.to_timestamp()
-    historical_prices = historical_prices.sort_index(axis=1)
-    historical_prices.columns = [f"{ticker.lower()}_{field.lower()}" for ticker, field in historical_prices.columns]
-    historical_prices.columns = [
-        col.replace("^gspc", "spy") for col in historical_prices.columns
-    ]
-    historical_prices.to_csv("historical_prices.csv")
+    for ticker in tickers_list:
+        historical_prices = get_historical_prices([ticker], start_date='2010-01-01', end_date='2025-12-31')
+        if ticker == "^GSPC":
+            ticker = "SPY"
+        historical_prices.to_parquet(os.path.join(TICKERS_DIR, f"{ticker}.parquet"), index=True)
