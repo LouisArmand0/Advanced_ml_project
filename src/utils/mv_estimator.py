@@ -47,6 +47,7 @@ class MeanVariance(BaseEstimator):
 
     def fit(self, X, y=None):
         self.V_ = self.transform_V(y)
+        return self
 
     def predict(self, X):
         if self.A==1:

@@ -16,6 +16,10 @@ class LinearRegression(LinearRegression):
     pass
 
 @add_transform_method
+class Ridge(Ridge):
+    pass
+
+@add_transform_method
 class MultiOutputRegressor(MultiOutputRegressor):
     pass
 

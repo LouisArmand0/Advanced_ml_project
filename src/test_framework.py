@@ -13,7 +13,7 @@ from utils.features import (compute_vol_adjusted_returns,
                             FeatureParams,
                             compute_features)
 from utils.metrics import sharpe_ratio, drawdown
-from utils.estimators import LinearRegression, MultiLGBMRegressor
+from utils.estimators import LinearRegression, MultiLGBMRegressor, Ridge
 from utils.backtesting import Backtester
 from utils.mv_estimator import MeanVariance
 
@@ -81,11 +81,20 @@ if __name__ == '__main__':
     )
     pnl = pd.merge(pnl, pd.DataFrame(m.pnl_), right_index=True, left_index=True)
 
+    ridge = make_pipeline(StandardScaler(), Ridge(), MeanVariance())
+    m = (
+        Backtester(ridge, name="ridge")
+        .compute_holdings(X, y)
+        .compute_pnl(ret)
+    )
+    pnl = pd.merge(pnl, pd.DataFrame(m.pnl_), right_index=True, left_index=True)
+
 
 
     plt.figure(figsize=(12, 8))
     plt.plot(pnl['linear_regression'].cumsum(), label=f'lr')
     plt.plot(pnl['benchmark'].cumsum(), label='benchmark')
+    plt.plot(pnl['ridge'].cumsum(), label='ridge')
     plt.legend()
     plt.title("Cumulative Sum")
     plt.xlabel("Date")

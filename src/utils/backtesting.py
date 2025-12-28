@@ -26,10 +26,10 @@ def fit_predict(estimator, X, y, train, test, return_estimator=True):
 @dataclass
 class Backtester:
     estimator: BaseEstimator = MeanVariance()
-    max_train_size: int = 36
+    max_train_size: int = 252
     test_size: int = 1
     pred_lag: int = 1
-    start_date: str = '2011-12-30'
+    start_date: str = '2009-12-30'
     end_date: str = None
     name: str = None
 
@@ -37,7 +37,7 @@ class Backtester:
         cv = TimeSeriesSplit(
         max_train_size=self.max_train_size,
         test_size=self.test_size,
-        n_splits=len(X.loc[self.start_date : self.end_date]) // self.test_size -1,
+        n_splits=len(X.loc[self.start_date : self.end_date]) // self.test_size - 1,
         )
         parallel = Parallel(n_jobs=n_jobs, pre_dispatch=pre_dispatch)
         res = parallel(
