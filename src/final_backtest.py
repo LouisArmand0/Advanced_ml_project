@@ -14,11 +14,11 @@ from utils.backtesting import Backtester
 
 # 3. Baselines: Models we want to beat (Markowitz & LightGBM)
 from utils.mv_estimator import MeanVariance
-from utils.estimators import MultiLGBMRegressor 
+from utils.estimators import MultiLGBMRegressor, LinearRegression
 
 # 4. Data Utilities: To fetch prices and compute returns
 from utils.features import getting_data_for_ticker_list, getting_trading_universe, compute_returns
-from utils.metrics import sharpe_ratio, drawdown 
+from utils.metrics import sharpe_ratio, drawdown
 
 
 # STEP 1: DATA LOADING & PREPARATION
@@ -63,12 +63,12 @@ benchmark = Backtester(
 # Logic: This uses Gradient Boosting (Trees). It treats every stock as a 
 # separate tabular problem. It ignores the graph structure/correlations.
 lgbm_strategy = Backtester(
-    MultiLGBMRegressor(n_estimators=100), 
+    LinearRegression(),
     name="LightGBM (Tabular)"
 ).train(X, y, X)
 
 
-# STEP 4: YOUR MODEL (DYNAMIC GNN)
+# STEP 4: OUR MODEL (DYNAMIC GNN)
 # Logic: This uses your LSTM+GAT architecture.
 # Why 'Dynamic'? 
 # The Backtester retrains the model periodically (Rolling Window).

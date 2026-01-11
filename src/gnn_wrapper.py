@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import torch
 import torch.nn as nn
 from sklearn.base import BaseEstimator, RegressorMixin
@@ -49,6 +50,7 @@ class GNNRegressor(BaseEstimator, RegressorMixin):
         This satisfies the "Dynamic Graph" requirement of the project.
         """
         # Calculate Spearman correlation (robust to outliers)
+        X_df = pd.DataFrame(X_df)
         corr_df = X_df.corr(method="spearman")
         
         # Remove self-loops (correlation of 1 with itself)
@@ -68,6 +70,7 @@ class GNNRegressor(BaseEstimator, RegressorMixin):
         
         Why? The LSTM needs a sequence of past data, not just the current value.
         """
+        X, y = pd.DataFrame(X), pd.DataFrame(y)
         data = X.values
         X_list, y_list = [], []
         
@@ -109,7 +112,7 @@ class GNNRegressor(BaseEstimator, RegressorMixin):
         
         # 2. Prepare Data (Sliding Window)
         X_train, y_train = self._prepare_tensors(X, y)
-        
+
         # 3. Initialize the PyTorch Model
         self.model = LSTM_GAT_Model(
             num_features=1, # Input is just returns
