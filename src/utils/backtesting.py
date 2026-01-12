@@ -27,7 +27,7 @@ def fit_predict(estimator, X, y, train, test, return_estimator=True):
 class Backtester:
     estimator: BaseEstimator = MeanVariance()
     max_train_size: int = 36
-    min_train_size: int = 30
+    min_train_size: int = 5
     test_size: int = 1
     pred_lag: int = 1
     start_date: str = '2011-12-30'

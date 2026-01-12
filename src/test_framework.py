@@ -140,6 +140,7 @@ if __name__ == '__main__':
     )
     ret = ret.pivot(index='date', columns='stock_name', values='simple_ret')
     ret = ret.loc[X.index]
+    ret = ret[y.columns]
 
 
     benchmark = (
@@ -152,7 +153,7 @@ if __name__ == '__main__':
     lr = make_pipeline(StandardScaler(), LinearRegression(), MeanVariance())
     m = (
         Backtester(lr, name="linear_regression")
-        .compute_holdings(X, y)
+        .compute_holdings(X, ret.shift(-1))
         .compute_pnl(ret)
     )
     pnl = pd.merge(pnl, pd.DataFrame(m.pnl_), right_index=True, left_index=True)
