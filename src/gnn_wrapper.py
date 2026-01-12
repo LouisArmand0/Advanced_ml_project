@@ -23,7 +23,7 @@ class GNNRegressor(BaseEstimator, RegressorMixin):
     It also handles the 'Dynamic' aspect by rebuilding the graph at every training step.
     """
 
-    def __init__(self, window_size=3, hidden_dim=32, num_heads=2, epochs=50, lr=0.001, corr_threshold=0.5):
+    def __init__(self, window_size=3, hidden_dim=32, num_heads=2, epochs=50, lr=0.01, corr_threshold=0.5, loss=nn.MSELoss()):
         """
         Hyperparameters for the model and training process.
         """
@@ -70,7 +70,10 @@ class GNNRegressor(BaseEstimator, RegressorMixin):
         
         Why? The LSTM needs a sequence of past data, not just the current value.
         """
-        X, y = pd.DataFrame(X), pd.DataFrame(y)
+        X = pd.DataFrame(X)
+        if y is not None:
+            y = pd.DataFrame(y)
+
         data = X.values
         X_list, y_list = [], []
         
@@ -152,15 +155,25 @@ class GNNRegressor(BaseEstimator, RegressorMixin):
         Standard Scikit-Learn 'predict' method.
         This is called by the Backtester to make trading decisions.
         """
-        self.model.eval() # Switch to evaluation mode (disable dropout)
-        
-        with torch.no_grad(): # No need to calculate gradients for inference
-            X_test = self._prepare_tensors(X)
-            preds = self.model(X_test, self.edge_index)
-            
-            # The Backtester expects an output array of the same length as the input.
-            # Since the LSTM consumed the first 'window_size' days, we must pad the beginning with zeros.
-            padding = np.zeros((self.window_size, self.num_stocks))
-            
-            # Combine padding + predictions
-            return np.vstack([padding, preds.cpu().numpy()])
+        if X.shape[0] <= self.window_size:
+            raise ValueError(f"Input length {X.shape[0]} <= window_size {self.window_size}")
+
+        self.num_stocks = X.shape[1]  # important for padding
+
+        self.model.eval()
+        X_test = self._prepare_tensors(X, y=None)  # [Samples - window_size, Stocks, Window, 1]
+        if X_test.shape[0] == 0:
+            return np.zeros((X.shape[0], X.shape[1]))
+
+        preds_list = []
+        with torch.no_grad():
+            for t in range(X_test.shape[0]):
+                x_t = X_test[t].to(self.device)
+                pred_t = self.model(x_t, self.edge_index)
+                preds_list.append(pred_t.cpu())
+
+        preds = torch.stack(preds_list)  # [Samples - window_size, Stocks]
+
+        # Pad first 'window_size' steps
+        padding = np.zeros((self.window_size, self.num_stocks))
+        return np.vstack([padding, preds.numpy()])
