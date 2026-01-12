@@ -62,10 +62,10 @@ benchmark = Backtester(
 # STEP 3: ML BASELINE (LIGHTGBM)
 # Logic: This uses Gradient Boosting (Trees). It treats every stock as a 
 # separate tabular problem. It ignores the graph structure/correlations.
-lgbm_strategy = Backtester(
+"""lgbm_strategy = Backtester(
     LinearRegression(),
     name="LightGBM (Tabular)"
-).train(X, y, X)
+).train(X, y, X)"""
 
 
 # STEP 4: OUR MODEL (DYNAMIC GNN)
@@ -78,7 +78,7 @@ lgbm_strategy = Backtester(
 gnn_strategy = Backtester(
     GNNRegressor(
         epochs=30,          # Number of training loops per window
-        window_size=20,     # LSTM Lookback
+        window_size=3,     # LSTM Lookback
         hidden_dim=32,      # Embedding size
         corr_threshold=0.5  # Sensitivity of the graph connections
     ), 

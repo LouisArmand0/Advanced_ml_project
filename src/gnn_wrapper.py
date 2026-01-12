@@ -23,7 +23,7 @@ class GNNRegressor(BaseEstimator, RegressorMixin):
     It also handles the 'Dynamic' aspect by rebuilding the graph at every training step.
     """
 
-    def __init__(self, window_size=20, hidden_dim=32, num_heads=2, epochs=50, lr=0.001, corr_threshold=0.5):
+    def __init__(self, window_size=3, hidden_dim=32, num_heads=2, epochs=50, lr=0.001, corr_threshold=0.5):
         """
         Hyperparameters for the model and training process.
         """
@@ -128,16 +128,22 @@ class GNNRegressor(BaseEstimator, RegressorMixin):
         self.model.train()
         for epoch in range(self.epochs):
             optimizer.zero_grad()
-            
+            total_loss = 0
+
+            for t in range(X_train.shape[0]):
+                x_t = X_train[t]
+                y_t = y_train[t]
             # Forward pass: LSTM -> GAT -> Prediction
             # Note: We pass the full batch for simplicity here.
             # For massive datasets, we would need mini-batches.
-            out = self.model(X_train, self.edge_index)
+                out = self.model(x_t, self.edge_index)
+                loss_t = criterion(out, y_t)
+                total_loss += loss_t.item()
             
             # Backward pass
-            loss = criterion(out, y_train)
-            loss.backward()
             optimizer.step()
+            if epoch % 10 == 0:
+                print(f"Epoch {epoch}, loss = {total_loss / X_train.shape[0]:.6f}")
             
         return self
 
