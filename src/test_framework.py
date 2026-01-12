@@ -157,17 +157,10 @@ if __name__ == '__main__':
     )
     pnl = pd.merge(pnl, pd.DataFrame(m.pnl_), right_index=True, left_index=True)
 
-    lgbm = make_pipeline(StandardScaler(), MultiLGBMRegressor(min_child_samples=5, n_estimators=25), MeanVariance())
-
-    m = (Backtester(lgbm, name="lgbm")
-         .compute_holdings(X, y)
-         .compute_pnl(ret))
-
-    pnl = pd.merge(pnl, pd.DataFrame(m.pnl_), right_index=True, left_index=True)
 
     plt.figure(figsize=(12, 8))
-    plt.plot(pnl.cumsum(), label=f'lr: {sharpe_ratio(pnl)}')
-    plt.plot(pnl_benchmark.cumsum(), label='benchmark')
+    plt.plot(pnl.cumsum(), label = pnl.columns)
+    #plt.plot(pnl_benchmark.cumsum(), label='benchmark')
     plt.legend()
     plt.title("Cumulative Sum")
     plt.xlabel("Date")
