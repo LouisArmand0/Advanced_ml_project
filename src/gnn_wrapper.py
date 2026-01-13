@@ -37,6 +37,7 @@ class GNNRegressor(BaseEstimator, RegressorMixin):
         self.model = None                   # The actual PyTorch model
         self.edge_index = None              # The graph structure
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.loss = loss
 
     def _prepare_graph(self, X_df):
         """
@@ -65,9 +66,9 @@ class GNNRegressor(BaseEstimator, RegressorMixin):
 
     def _prepare_tensors(self, X, y=None):
         """
-        Internal method to transform 2D DataFrames (Time x Stocks) 
+        Internal method to transform 2D DataFrames (Time x Stocks)
         into 3D PyTorch Tensors (Samples x Stocks x Window_Size).
-        
+
         Why? The LSTM needs a sequence of past data, not just the current value.
         """
         X = pd.DataFrame(X)
@@ -76,49 +77,49 @@ class GNNRegressor(BaseEstimator, RegressorMixin):
 
         data = X.values
         X_list, y_list = [], []
-        
+
         # Determine the loop range
         end_idx = len(data) if y is None else len(data)
-        
+
         # Sliding Window Logic
         for t in range(self.window_size, end_idx):
             # Input: Data from (t - window) to (t)
-            X_list.append(data[t-self.window_size:t, :])
-            
+            X_list.append(data[t - self.window_size:t, :])
+
             # Target: Data at (t) - only during training
             if y is not None:
                 y_list.append(y.iloc[t].values)
-                
+
         # Stack into numpy arrays
-        X_tensor = np.array(X_list) # Shape: (Samples, Window, Stocks)
-        
+        X_tensor = np.array(X_list)  # Shape: (Samples, Window, Stocks)
+
         # Permute dimensions to match model expectation:
         # From (Samples, Window, Stocks) -> (Samples, Stocks, Window)
         X_tensor = np.transpose(X_tensor, (0, 2, 1))
-        
+
         # Add feature dimension (Samples, Stocks, Window, 1)
         X_tensor = X_tensor[..., np.newaxis]
-        
+
         # Convert to PyTorch Tensors
         if y is not None:
             return torch.FloatTensor(X_tensor).to(self.device), torch.FloatTensor(np.array(y_list)).to(self.device)
         return torch.FloatTensor(X_tensor).to(self.device)
 
-    def fit(self, X, y):
+    def fit(self, X, y, ret):
         """
         Standard Scikit-Learn 'fit' method.
         This is called by the Backtester to train the model on historical data.
         """
         # 1. Build the Graph (Dynamically based on current X)
-        self.edge_index = self._prepare_graph(X)
-        self.num_stocks = X.shape[1]
+        self.edge_index = self._prepare_graph(ret)
+        self.num_stocks = ret.shape[1]
         
         # 2. Prepare Data (Sliding Window)
         X_train, y_train = self._prepare_tensors(X, y)
 
         # 3. Initialize the PyTorch Model
         self.model = LSTM_GAT_Model(
-            num_features=1, # Input is just returns
+            num_features= 1,
             hidden_dim=self.hidden_dim,
             num_heads=self.num_heads,
             dropout=0.2
@@ -126,7 +127,7 @@ class GNNRegressor(BaseEstimator, RegressorMixin):
         
         # 4. Training Loop (Standard PyTorch procedure)
         optimizer = torch.optim.Adam(self.model.parameters(), lr=self.lr)
-        criterion = nn.MSELoss() # We try to minimize the squared error of return prediction
+        criterion = self.loss
         
         self.model.train()
         for epoch in range(self.epochs):
