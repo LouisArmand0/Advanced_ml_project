@@ -3,7 +3,7 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 from joblib import Parallel, delayed
-from src.utils.mv_estimator import MeanVariance
+from utils.mv_estimator import MeanVariance
 from sklearn.base import BaseEstimator, clone
 from sklearn.model_selection import TimeSeriesSplit
 from sklearn.utils.metaestimators import _safe_split
@@ -27,6 +27,7 @@ def fit_predict(estimator, X, y, train, test, return_estimator=True):
 class Backtester:
     estimator: BaseEstimator = MeanVariance()
     max_train_size: int = 36
+    min_train_size: int = 5
     test_size: int = 1
     pred_lag: int = 1
     start_date: str = '2011-12-30'
@@ -34,10 +35,19 @@ class Backtester:
     name: str = None
 
     def compute_holdings(self, X, y, pre_dispatch="2*n_jobs", n_jobs=1):
+
+        # determine n_splits considering min_train_size
+        n_obs = len(X.loc[self.start_date: self.end_date])
+        max_train = self.max_train_size
+        min_train = self.min_train_size
+
+        # TimeSeriesSplit requires n_splits >=1
+        n_splits = max((n_obs - min_train) // self.test_size, 1)
+
         cv = TimeSeriesSplit(
-        max_train_size=self.max_train_size,
-        test_size=self.test_size,
-        n_splits=len(X.loc[self.start_date : self.end_date]) // self.test_size -1,
+            max_train_size=max_train,
+            test_size=self.test_size,
+            n_splits=n_splits,
         )
         parallel = Parallel(n_jobs=n_jobs, pre_dispatch=pre_dispatch)
         res = parallel(

@@ -5,7 +5,7 @@ and Portfolio Management class.
 
 import pandas as pd
 import numpy as np
-from src.utils.metrics import sharpe_ratio
+from utils.metrics import sharpe_ratio
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.linear_model import LinearRegression
 
