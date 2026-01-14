@@ -115,10 +115,11 @@ for h in hidden_dims:
         hidden_dim=h,
         corr_threshold=0.5,
         num_heads=5,
-        lr=0.01,
+        lr=0.05,
         loss=SharpeLoss(),
         nb_features_per_stock=16,
         drop_out=0.0,
+        num_layers_lstm=3,
     )
 
     model.fit(X_train, y_train, returns, X_test, y_test)

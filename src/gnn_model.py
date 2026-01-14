@@ -75,7 +75,7 @@ class LSTM_GAT_Model(nn.Module):
         
         # h_n shape is [1, Num_Stocks, Hidden_Dim]. We remove the first dimension.
         # 'temporal_embeddings' represents the individual state of each stock.
-        temporal_embeddings = h_n.squeeze(0) 
+        temporal_embeddings = h_n[-1]
         
 
         # SPATIAL AGGREGATION (GAT)
