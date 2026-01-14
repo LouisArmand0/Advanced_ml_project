@@ -5,17 +5,18 @@ import warnings
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
-from utils.features import (compute_vol_adjusted_returns,
+from utils.features import (
                                compute_alpha_to_market,
                                compute_beta_to_market,
                                compute_macd, compute_cti,
                                compute_alpha_variance_ratio,
-                            getting_trading_universe,
-                            getting_data_for_ticker_list, compute_returns,)
+                            )
 # Suppress warnings to keep the output clean
 warnings.filterwarnings("ignore")
 from gnn_wrapper import GNNRegressor
 from utils.features import getting_data_for_ticker_list, getting_trading_universe, compute_returns
+from utils.backtesting import Backtester
+from utils.mv_estimator import MeanVariance
 
 import torch
 import torch.nn as nn
@@ -171,7 +172,6 @@ scaler = StandardScaler()
 X_train = scaler.fit_transform(X_train)
 X_test = scaler.transform(X_test)
 
-
 hidden_dims = [32]
 cum_returns_dict = {}
 sharpe_dict = {}
@@ -180,7 +180,7 @@ for h in hidden_dims:
     print(f"Training model with hidden_dim = {h}")
 
     model = GNNRegressor(
-        epochs=100,
+        epochs=10,
         window_size=20,
         hidden_dim=h,
         corr_threshold=0.7,
@@ -200,6 +200,14 @@ for h in hidden_dims:
     print(f"Hidden dim {h}: Sharpe = {sharpe:.2f}")
     cum_returns_dict[h] = cumulative_returns
     sharpe_dict[h] = sharpe
+
+    preds_df = pd.DataFrame(preds, index=y_test.index)
+    benchmark = (
+        Backtester(MeanVariance(), name="benchmark")
+        .compute_holdings(preds_df.iloc[20:], preds_df.iloc[20:],pd.DataFrame(y_test_array, index=y_test.index).iloc[20:])
+        .compute_pnl(pd.DataFrame(y_test_array, index=y_test.index).iloc[20:])
+    )
+    pnl = pd.DataFrame(benchmark.pnl_)
 
 plt.figure(figsize=(12, 6))
 for h, cum_ret in cum_returns_dict.items():

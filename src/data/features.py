@@ -160,39 +160,17 @@ def compute_macd(ret_df: pd.DataFrame,
 
     return pd.DataFrame(macd_dict, index=ret_df.index)
 
+
+
 if __name__ == "__main__":
+    trading_universe = getting_trading_universe()
 
-    file_path_ticker = os.path.join(os.path.dirname(__file__), '../data/raw/trading_universe.csv')
-    tickers_stock = pd.read_csv(file_path_ticker)['symbol'].to_list()
+    # NOTE: We select the first 50 stocks for the demonstration
+    tickers = trading_universe['symbol'].to_list()[:50]
 
-    file_path_prices = os.path.join(os.path.dirname(__file__), '../data/raw/historical_prices.csv')
-    prices = pd.read_csv("src/data/raw/historical_prices.csv").set_index("Date").filter(like="_close")
+    # Download historical prices
+    df_prices = getting_data_for_ticker_list(tickers)
 
     adj_returns = compute_vol_adjusted_returns(prices)
-    beta_to_mkt = compute_beta_to_market(
-        ret_df=adj_returns,
-        tickers_stock=tickers_stock,
-        ticker_market="spy",
-        lookback=40
-    )
-
-    alpha_to_mkt = compute_alpha_to_market(
-        ret_df=adj_returns,
-        tickers_stock=tickers_stock,
-        ticker_market="spy",
-        lookback=5
-    )
-    alpha_variance_ratio = compute_alpha_variance_ratio(
-        ret_df=adj_returns,
-        tickers_stock=tickers_stock,
-        ticker_market="spy",
-        lookback=5
-    )
-
-    cti = compute_cti(ret_df=adj_returns, lookback=5)
-    macd = compute_macd(
-        ret_df=adj_returns,
-        tickers_stock=tickers_stock,
-        short_window=5,
-        long_window=16
-    )
+    features = compute_features(adj_returns)
+    print(features.head())
