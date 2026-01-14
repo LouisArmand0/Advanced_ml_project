@@ -106,7 +106,7 @@ class GNNRegressor_Multiple(BaseEstimator, RegressorMixin):
 
         return torch.FloatTensor(X_tensor).to(self.device)
 
-    def fit(self, X, y, ret, X_val, y_val):
+    def fit(self, X, y, ret, X_val=None, y_val=None):
         """
         Standard Scikit-Learn 'fit' method.
         This is called by the Backtester to train the model on historical data.
@@ -117,7 +117,8 @@ class GNNRegressor_Multiple(BaseEstimator, RegressorMixin):
         
         # 2. Prepare Data (Sliding Window)
         X_train, y_train = self._prepare_tensors(X, y)
-        X_val, y_val = self._prepare_tensors(X_val, y_val)
+        if X_val is not None and y_val is not None:
+            X_val, y_val = self._prepare_tensors(X_val, y_val)
 
         # 3. Initialize the PyTorch Model
         self.model = LSTM_GAT_Model(

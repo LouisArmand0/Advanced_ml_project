@@ -82,3 +82,63 @@ class Backtester:
         self.compute_holdings(X, y)
         self.compute_pnl(ret)
         return self.pnl_
+
+
+### BACKTEST ENGINE FOR GNN ###
+def yearly_walkforward_splits(dates, train_years=1, test_years=1):
+    years = dates.year.unique()
+    for i in range(len(years) - train_years - test_years + 1):
+        train_year = years[i:i+train_years]
+        test_year = years[i+train_years:i+train_years+test_years]
+
+        train_idx = dates.year.isin(train_year)
+        test_idx = dates.year.isin(test_year)
+
+        yield train_idx, test_idx
+
+
+@dataclass
+class WalkForwardBacktester:
+    model: object              # your GNN
+    mvo: object
+    scaler: object
+    pred_lag: int = 1
+    name: str = None
+
+    def run(self, X, y, ret):
+        holdings = []
+        pnl = []
+
+        for train_idx, test_idx in yearly_walkforward_splits(X.index):
+            X_train, y_train, ret_train = X.loc[train_idx], y.loc[train_idx], ret.loc[train_idx]
+            X_test, y_test, ret_test = X.loc[test_idx], y.loc[test_idx], ret.loc[test_idx]
+
+            # Scale data
+            X_train = self.scaler.fit_transform(X_train)
+            X_test = self.scaler.transform(X_test)
+
+            # Train GNN
+            self.model.fit(X_train, y_train, ret_train)
+
+            # Predict expected returns (year t+1)
+            mu_hat = self.model.predict(X_test)
+
+            self.mvo.fit(X=None, y=ret_train)
+            h = self.mvo.predict(mu_hat)
+
+            h = pd.DataFrame(
+                h,
+                index=ret[test_idx].index,
+                columns = ret.columns,
+            )
+
+            holdings.append(h)
+            pnl.append((h.shift(self.pred_lag) * ret_test).sum(axis=1))
+
+        self.h_ = pd.concat(holdings)
+        self.pnl_ = pd.concat(pnl)
+
+        if self.name:
+            self.pnl_ = self.pnl_.rename(self.name)
+
+        return self

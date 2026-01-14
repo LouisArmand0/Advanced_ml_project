@@ -15,7 +15,6 @@ from utils.features import (
 warnings.filterwarnings("ignore")
 from gnn_wrapper import GNNRegressor
 from utils.features import getting_data_for_ticker_list, getting_trading_universe, compute_returns
-from utils.backtesting import Backtester
 from utils.mv_estimator import MeanVariance
 
 import torch
