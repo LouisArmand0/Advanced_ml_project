@@ -119,10 +119,10 @@ for h in hidden_dims:
         loss=SharpeLoss(),
         nb_features_per_stock=16,
         drop_out=0.0,
-        num_layers_lstm=3,
+        num_layers_lstm=2,
     )
 
-    model.fit(X_train, y_train, returns, X_test, y_test)
+    model.fit(X_train, y_train, ret_train, X_test, y_test)
     preds = model.predict(X_test)
 
     if isinstance(ret_test, pd.DataFrame) or isinstance(ret_test, pd.Series):
