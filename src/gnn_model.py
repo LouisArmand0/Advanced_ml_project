@@ -13,7 +13,7 @@ class LSTM_GAT_Model(nn.Module):
     3. Prediction component (Linear): outputs the expected return.
     """
     
-    def __init__(self, num_features, hidden_dim, num_heads, dropout):
+    def __init__(self, num_features, hidden_dim, num_layers_lstm, num_heads, dropout):
         """
         Initialize the model layers.
 
@@ -32,7 +32,7 @@ class LSTM_GAT_Model(nn.Module):
         self.lstm = nn.LSTM(
             input_size=num_features, 
             hidden_size=hidden_dim, 
-            num_layers=1, 
+            num_layers=num_layers_lstm,
             batch_first=True
         )
         

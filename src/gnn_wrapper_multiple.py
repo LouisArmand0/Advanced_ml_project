@@ -23,7 +23,7 @@ class GNNRegressor_Multiple(BaseEstimator, RegressorMixin):
     It also handles the 'Dynamic' aspect by rebuilding the graph at every training step.
     """
 
-    def __init__(self, window_size: int, hidden_dim: int, num_heads: int, epochs: int, lr: float, corr_threshold: float,
+    def __init__(self, window_size: int, hidden_dim: int, num_layers_lstm: int,  num_heads: int, epochs: int, lr: float, corr_threshold: float,
                  nb_features_per_stock: int, drop_out: float,  loss=nn.MSELoss()):
         """
         Hyperparameters for the model and training process.
@@ -37,6 +37,7 @@ class GNNRegressor_Multiple(BaseEstimator, RegressorMixin):
         self.loss = loss
         self.nb_features_per_stock = nb_features_per_stock
         self.drop_out = drop_out
+        self.num_layers_lstm = num_layers_lstm
         
         self.model = None                   # The actual PyTorch model
         self.edge_index = None              # The graph structure
@@ -123,7 +124,8 @@ class GNNRegressor_Multiple(BaseEstimator, RegressorMixin):
             num_features= self.nb_features_per_stock, #nb of features per stock
             hidden_dim=self.hidden_dim,
             num_heads=self.num_heads,
-            dropout=self.drop_out
+            dropout=self.drop_out,
+            num_layers_lstm=self.num_layers_lstm,
         ).to(self.device)
         
         # 4. Training Loop (Standard PyTorch procedure)
