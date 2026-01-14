@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler
 
 from gnn_wrapper_multiple import GNNRegressor_Multiple
-from src.utils.mv_estimator import MeanVariance
+from utils.mv_estimator import MeanVariance
 
 from utils.backtesting import WalkForwardBacktester
 from utils.custom_loss import SharpeLoss
