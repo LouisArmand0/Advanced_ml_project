@@ -13,7 +13,7 @@ from utils.features import (
                             )
 # Suppress warnings to keep the output clean
 warnings.filterwarnings("ignore")
-from gnn_wrapper import GNNRegressor
+from src.graph_nn.gnn_wrapper import GNNRegressor
 from utils.features import getting_data_for_ticker_list, getting_trading_universe, compute_returns
 from utils.mv_estimator import MeanVariance
 

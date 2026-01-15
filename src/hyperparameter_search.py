@@ -11,7 +11,7 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 
 from sklearn.preprocessing import StandardScaler
 
-from gnn_wrapper_multiple import GNNRegressor_Multiple
+from graph_nn.gnn_wrapper import GNNRegressor_Multiple
 from utils.mv_estimator import MeanVariance
 
 from utils.backtesting import WalkForwardBacktester
