@@ -5,20 +5,14 @@ import torch.nn as nn
 from sklearn.base import BaseEstimator, RegressorMixin
 
 # Import our custom PyTorch model
-from gnn_model import LSTM_GAT_Model
-# Import the function to build the graph 
-from graph_nn.graph_def import compute_adj_matrix_based_on_correlation
+from src.graph_nn.gnn_model import LSTM_GAT_Model
+# Import the function to build the graph
 
 class GNNRegressor_Multiple(BaseEstimator, RegressorMixin):
     """
-    The GNNRegressor acts as a 'Wrapper' (or Adapter).
-    
-    Why is this file necessary?
-    ---------------------------
-    1. The existing project infrastructure (backtester) expects a Scikit-Learn model 
-       (with .fit() and .predict() methods).
-    2. Our Deep Learning model is written in PyTorch (with tensors, epochs, gradients).
-    
+    The GNNRegressor_Multiple acts as a 'Wrapper' (or Adapter). It takes multiple features
+    per stocks and not just returns.
+
     This class translates the backtester's commands into PyTorch commands.
     It also handles the 'Dynamic' aspect by rebuilding the graph at every training step.
     """

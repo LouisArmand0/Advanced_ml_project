@@ -1,13 +1,11 @@
 import torch
 import torch.nn as nn
 import numpy as np
-import pandas as pd
-import os
 import matplotlib.pyplot as plt
 
 # IMPORTS 
 # We import the custom model architecture we defined
-from gnn_model import LSTM_GAT_Model
+from src.graph_nn.gnn_model import LSTM_GAT_Model
 
 # We reuse the data infrastructure built by your teammate
 # ensuring consistency with the rest of the project

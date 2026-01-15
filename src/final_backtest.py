@@ -1,24 +1,22 @@
 import pandas as pd
 import matplotlib.pyplot as plt
-import numpy as np
 import warnings
 
 # Suppress warnings to keep the output clean
 warnings.filterwarnings("ignore")
 
 # 1. The GNN Wrapper: Connects our PyTorch model to the Backtester
-from gnn_wrapper import GNNRegressor
+from src.graph_nn.gnn_wrapper import GNNRegressor
 
 # 2. The Backtester: Simulates the trading process (rolling window training)
 from utils.backtesting import Backtester
 
 # 3. Baselines: Models we want to beat (Markowitz & LightGBM)
 from utils.mv_estimator import MeanVariance
-from utils.estimators import MultiLGBMRegressor, LinearRegression
 
 # 4. Data Utilities: To fetch prices and compute returns
 from utils.features import getting_data_for_ticker_list, getting_trading_universe, compute_returns
-from utils.metrics import sharpe_ratio, drawdown
+from utils.metrics import drawdown
 
 
 # STEP 1: DATA LOADING & PREPARATION
