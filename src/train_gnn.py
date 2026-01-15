@@ -34,7 +34,7 @@ CORRELATION_THRESHOLD = 0.5
 def prepare_data():
     """
     Step 1: Load Raw Data and Compute Returns.
-    This function leverages the existing 'features.py' utility to fetch price data
+    This function leverages the existing 'feature_viz.py' utility to fetch price data
     and transform it into log-returns, which are stationary and better for DL models.
     """
     print("1. Loading Data...")
