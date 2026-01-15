@@ -48,6 +48,28 @@ def compute_returns(prices: pd.DataFrame, return_type: str) -> pd.DataFrame:
     prices = prices.rename(columns={'ret': f'{return_type}_ret'})
     return prices[['date', 'stock_name', f'{return_type}_ret']].dropna()
 
+def compute_lagged_returns_long(
+    df: pd.DataFrame,
+    lag: int,
+    date_col: str = "date",
+    stock_col: str = "stock_name",
+    price_col: str = "price_at_close",
+) -> pd.DataFrame:
+
+    if lag <= 0:
+        raise ValueError("lag must be a positive integer")
+
+    df = df.copy()
+    df = df.sort_values([stock_col, date_col])
+    df["price_lag"] = (
+        df.groupby(stock_col)[price_col]
+          .shift(lag)
+    )
+
+    df[f'ret_{lag}_diff'] = df[price_col] / df["price_lag"] - 1
+    df = df.drop(columns=["price_lag"])
+
+    return df[['date', 'stock_name', f'ret_{lag}_diff']].dropna()
 def compute_rolling_vol(returns: pd.DataFrame, window: int) -> pd.DataFrame:
     """Rolling standard deviation volatility."""
     returns = returns.sort_values(['stock_name', 'date']).copy()
@@ -193,7 +215,7 @@ def compute_macd(ret_df: pd.DataFrame,
 
     return df[['date', 'stock_name', f'macd_{short_window}_{long_window}']].dropna().reset_index(drop=True)
 
-def compute_features(ret, wide=True):
+def compute_features(prices, ret, wide=True):
     beta_to_mkt_list = []
     for lookback in [126, 252]:
         temp = compute_beta_to_market(
@@ -254,8 +276,20 @@ def compute_features(ret, wide=True):
     for alpha_var_df in alpha_var_list[1:]:
         alpha_var = pd.merge(alpha_var, alpha_var_df, on=['date', 'stock_name'], how='inner')
 
+    lagged_ret_list = []
+    for lookback in [5, 21, 63, 126, 252]:
+        lagged_ret_list.append(compute_lagged_returns_long(
+            prices,
+            lookback
+        )
+        )
+    lagged_returns = lagged_ret_list[0]
+    for lagged_ret_df in lagged_ret_list[1:]:
+        lagged_returns = pd.merge(lagged_returns, lagged_ret_df, on=['date', 'stock_name'], how='inner')
+
+
     # Setting data
-    l = [beta_to_mkt, alpha_to_mkt, alpha_var, cti, macd]
+    l = [beta_to_mkt, alpha_to_mkt, alpha_var, cti, macd, lagged_returns]
     X_full = l[0]
 
     for c in l[1:]:
@@ -283,17 +317,17 @@ if __name__ == '__main__':
     ticker_list = [ticker for ticker in trading_universe if ticker != 'SPY']
     market_ticker = ["SPY"]
 
-    df = getting_data_for_ticker_list(ticker_list + market_ticker)
-    df = df.dropna(axis=1, how='any')
-    ticker_list = [col.split('_')[0] for col in df.columns if col != 't_close']
+    prices = getting_data_for_ticker_list(ticker_list + market_ticker)
+    prices = prices.dropna(axis=1, how='any')
+    ticker_list = [col.split('_')[0] for col in prices.columns if col != 't_close']
 
-    ret_df = compute_returns(df, 'log')
+    ret_df = compute_returns(prices, 'simple')
     vol_adj_ret = compute_vol_adjusted_returns(
-        df,
+        prices,
         return_type='simple',
         vol_model='ewma',
-        window=20
+        window=1
     )
 
-    features = compute_features(ret_df, wide=True)
+    features = compute_features(prices, ret_df, wide=True)
     print(features.head())

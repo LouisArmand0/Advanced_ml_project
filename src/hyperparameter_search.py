@@ -37,19 +37,18 @@ def parse_feature(name):
 def run_backtest(h, n, X, y, returns):
     logger.info(f"[START] gnn_{h}_{n}")
 
-    # local seed (important!)
-    torch.manual_seed(42 + h + n)
-    np.random.seed(42 + h + n)
+    torch.manual_seed(42)
+    np.random.seed(42)
 
     model = GNNRegressor_Multiple(
         epochs=150,
-        window_size=20,
+        window_size=21,
         hidden_dim=h,
         corr_threshold=0.5,
         num_heads=5,
         lr=0.05,
         loss=SharpeLoss(),
-        nb_features_per_stock=16,
+        nb_features_per_stock=21,
         drop_out=0.0,
         num_layers_lstm=n,
     )
@@ -103,7 +102,7 @@ if __name__ == "__main__":
 
     # computing the features based on returns
     logger.info('Computing the features...')
-    X = compute_features(returns, wide=True)
+    X = compute_features(df, returns, wide=True)
     grouped_cols = sorted(X.columns.to_list(), key=parse_feature)
     X = X[grouped_cols]
     X = X[X.index > "2012-01-01"]
@@ -112,6 +111,11 @@ if __name__ == "__main__":
     logger.info(f'Computing the target')
     returns = returns.pivot(index='date', columns='stock_name', values='simple_ret')
     returns = returns.dropna(axis=1, how='any')
+
+    #VOLATILITY TARGET
+    TARGET_VOL = 0.15
+    returns = (returns / returns.std()) * TARGET_VOL
+
     y = returns.shift(-1)[:-1]
 
     # Aligning on all the dates
@@ -121,7 +125,7 @@ if __name__ == "__main__":
     returns = returns.loc[common_index]
 
 
-    params = [(h, n) for h in [32, 64, 128, 256] for n in range(1, 4)]
+    params = [(h, n) for h in [32] for n in range(3, 4)]
 
     pnl_list = []
     sharpe_dict = {}
