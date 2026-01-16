@@ -41,10 +41,10 @@ def run_backtest(h, n, w, X, y, returns):
     np.random.seed(42)
 
     model = GNNRegressor_Multiple(
-        epochs=250,
+        epochs=1,
         window_size=w,
         hidden_dim=h,
-        corr_threshold=0.7,
+        corr_threshold=0.5,
         num_heads=5,
         lr=0.05,
         loss=SharpeLoss(),
@@ -143,6 +143,8 @@ if __name__ == "__main__":
             sharpe_dict[(h, n, w)] = sharpe
 
     pnl = pd.concat(pnl_list, axis=1)
+
+    pnl.to_csv(RESULTS_DIR /'pnl.csv')
     cumsum_pnl = pnl.cumsum()
 
     plt.figure(figsize=(12, 6))
