@@ -314,7 +314,7 @@ class GNNRegressor_Multiple(BaseEstimator, RegressorMixin):
                 # Forward
                 out = self.model(x_t, self.edge_index)
                 out = out - out.mean()
-                out = out / out.abs().sum()
+                out = out / (out.abs().sum() + 1e-6) #numerical stability
                 loss = criterion(out, y_t)
                 total_train_loss += loss.item()
 
