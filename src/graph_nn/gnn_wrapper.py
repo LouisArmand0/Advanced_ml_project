@@ -3,10 +3,7 @@ import pandas as pd
 import torch
 import torch.nn as nn
 from sklearn.base import BaseEstimator, RegressorMixin
-
-# Import our custom PyTorch model
 from .gnn_model import LSTM_GAT_Model
-# Import the function to build the graph 
 from .graph_def import compute_adj_matrix_based_on_correlation
 
 class GNNRegressor(BaseEstimator, RegressorMixin):
@@ -27,7 +24,7 @@ class GNNRegressor(BaseEstimator, RegressorMixin):
         """
         Hyperparameters for the model and training process.
         """
-        self.window_size = window_size      # Lookback period (e.g., 20 days) for the LSTM
+        self.window_size = window_size      # Lookback period for the LSTM
         self.hidden_dim = hidden_dim        # Size of the internal neural network layers
         self.num_heads = num_heads          # Number of attention heads for the GAT
         self.epochs = epochs                # How many times we iterate over the data
@@ -60,7 +57,7 @@ class GNNRegressor(BaseEstimator, RegressorMixin):
         # Create adjacency matrix: 1 if correlated, 0 otherwise
         adj_matrix = np.where(np.abs(corr_df.values) >= self.corr_threshold, 1, 0)
         
-        # Convert to PyTorch Geometric format (Edge Index: [2, Num_Edges])
+        # Convert to PyTorch Geometric format 
         rows, cols = np.where(adj_matrix == 1)
         return torch.tensor([rows, cols], dtype=torch.long).to(self.device)
 
@@ -68,8 +65,6 @@ class GNNRegressor(BaseEstimator, RegressorMixin):
         """
         Internal method to transform 2D DataFrames (Time x Stocks)
         into 3D PyTorch Tensors (Samples x Stocks x Window_Size).
-
-        Why? The LSTM needs a sequence of past data, not just the current value.
         """
         X = pd.DataFrame(X)
         if y is not None:
@@ -83,21 +78,17 @@ class GNNRegressor(BaseEstimator, RegressorMixin):
 
         # Sliding Window Logic
         for t in range(self.window_size, end_idx):
-            # Input: Data from (t - window) to (t)
+            # Input: data from (t - window) to (t)
             X_list.append(data[t - self.window_size:t, :])
 
-            # Target: Data at (t) - only during training
+            # Target: data at (t) - only during training
             if y is not None:
                 y_list.append(y.iloc[t].values)
 
         # Stack into numpy arrays
-        X_tensor = np.array(X_list)  # Shape: (Samples, Window, Stocks)
+        X_tensor = np.array(X_list)  
 
-        # Permute dimensions to match model expectation:
-        # From (Samples, Window, Stocks) -> (Samples, Stocks, Window)
         X_tensor = np.transpose(X_tensor, (0, 2, 1))
-
-        # Add feature dimension (Samples, Stocks, Window, 1)
         X_tensor = X_tensor[..., np.newaxis]
 
         # Convert to PyTorch Tensors
@@ -110,14 +101,14 @@ class GNNRegressor(BaseEstimator, RegressorMixin):
         Standard Scikit-Learn 'fit' method.
         This is called by the Backtester to train the model on historical data.
         """
-        # 1. Build the Graph (Dynamically based on current X)
+        # Build the Graph (Dynamically based on current X)
         self.edge_index = self._prepare_graph(ret)
         self.num_stocks = ret.shape[1]
         
-        # 2. Prepare Data (Sliding Window)
+        # Prepare Data (Sliding Window)
         X_train, y_train = self._prepare_tensors(X, y)
 
-        # 3. Initialize the PyTorch Model
+        # Initialize the PyTorch Model
         self.model = LSTM_GAT_Model(
             num_features= 1,
             hidden_dim=self.hidden_dim,
@@ -125,7 +116,7 @@ class GNNRegressor(BaseEstimator, RegressorMixin):
             dropout=0.2
         ).to(self.device)
         
-        # 4. Training Loop (Standard PyTorch procedure)
+        # Training Loop (Standard PyTorch procedure)
         optimizer = torch.optim.Adam(self.model.parameters(), lr=self.lr)
         criterion = self.loss
         
@@ -138,8 +129,8 @@ class GNNRegressor(BaseEstimator, RegressorMixin):
                 x_t = X_train[t]
                 y_t = y_train[t]
             # Forward pass: LSTM -> GAT -> Prediction
-            # Note: We pass the full batch for simplicity here.
-            # For massive datasets, we would need mini-batches.
+    
+            # Mini-batches.
                 out = self.model(x_t, self.edge_index)
                 loss_t = criterion(out, y_t)
                 total_loss += loss_t.item()
@@ -162,7 +153,7 @@ class GNNRegressor(BaseEstimator, RegressorMixin):
         self.num_stocks = X.shape[1]  # important for padding
 
         self.model.eval()
-        X_test = self._prepare_tensors(X, y=None)  # [Samples - window_size, Stocks, Window, 1]
+        X_test = self._prepare_tensors(X, y=None)  
         if X_test.shape[0] == 0:
             return np.zeros((X.shape[0], X.shape[1]))
 
@@ -173,7 +164,7 @@ class GNNRegressor(BaseEstimator, RegressorMixin):
                 pred_t = self.model(x_t, self.edge_index)
                 preds_list.append(pred_t.cpu())
 
-        preds = torch.stack(preds_list)  # [Samples - window_size, Stocks]
+        preds = torch.stack(preds_list)  
 
         # Pad first 'window_size' steps
         padding = np.zeros((self.window_size, self.num_stocks))
@@ -195,19 +186,19 @@ class GNNRegressor_Multiple(BaseEstimator, RegressorMixin):
         """
         Hyperparameters for the model and training process.
         """
-        self.window_size = window_size  # Lookback period (e.g., 20 days) for the LSTM
-        self.hidden_dim = hidden_dim  # Size of the internal neural network layers
-        self.num_heads = num_heads  # Number of attention heads for the GAT
-        self.epochs = epochs  # How many times we iterate over the data
-        self.lr = lr  # Learning rate (speed of learning)
-        self.corr_threshold = corr_threshold  # Minimum correlation to create an edge in the graph
+        self.window_size = window_size  
+        self.hidden_dim = hidden_dim  
+        self.num_heads = num_heads  
+        self.epochs = epochs  
+        self.lr = lr  
+        self.corr_threshold = corr_threshold  
         self.loss = loss
         self.nb_features_per_stock = nb_features_per_stock
         self.drop_out = drop_out
         self.num_layers_lstm = num_layers_lstm
 
-        self.model = None  # The actual PyTorch model
-        self.edge_index = None  # The graph structure
+        self.model = None  
+        self.edge_index = None  
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     def _prepare_graph(self, X_df):
@@ -277,16 +268,16 @@ class GNNRegressor_Multiple(BaseEstimator, RegressorMixin):
         Standard Scikit-Learn 'fit' method.
         This is called by the Backtester to train the model on historical data.
         """
-        # 1. Build the Graph (Dynamically based on current X)
+        # Build the Graph (dynamically based on current X)
         self.edge_index = self._prepare_graph(ret)
         self.num_stocks = ret.shape[1]
 
-        # 2. Prepare Data (Sliding Window)
+        # Prepare Data (sliding Window)
         X_train, y_train = self._prepare_tensors(X, y)
         if X_val is not None and y_val is not None:
             X_val, y_val = self._prepare_tensors(X_val, y_val)
 
-        # 3. Initialize the PyTorch Model
+        # Initialize the PyTorch Model
         self.model = LSTM_GAT_Model(
             num_features=self.nb_features_per_stock,  # nb of features per stock
             hidden_dim=self.hidden_dim,
@@ -295,7 +286,7 @@ class GNNRegressor_Multiple(BaseEstimator, RegressorMixin):
             num_layers_lstm=self.num_layers_lstm,
         ).to(self.device)
 
-        # 4. Training Loop (Standard PyTorch procedure)
+        # Training Loop (Standard PyTorch procedure)
         optimizer = torch.optim.Adam(self.model.parameters(), lr=self.lr)
         criterion = self.loss
 

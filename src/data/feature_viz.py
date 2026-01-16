@@ -11,7 +11,7 @@ def parse_feature(name):
     ticker = parts[-1]  # last part is ticker
     feature = "_".join(parts[:-1])  # everything before ticker
 
-    # optional numeric order if it exists
+    # Optional numeric order if it exists
     m = re.search(r"\d+", feature)
     feature_id = int(m.group()) if m else float("inf")
 
@@ -36,18 +36,18 @@ if __name__ == "__main__":
 
     logger.info(f'Data loaded for {df.stock_name.nunique()} tickers')
 
-    # computing the returns
+    # Computing the returns
     returns = compute_returns(df, 'simple')
     returns = returns.dropna(axis=1)
 
-    # computing the features based on returns
+    # Computing the features based on returns
     logger.info('Computing the features...')
     X = compute_features(returns, wide=True)
     grouped_cols = sorted(X.columns.to_list(), key=parse_feature)
     X = X[grouped_cols]
     X = X[X.index > "2012-01-01"]
 
-    # target
+    # Target
     logger.info(f'Computing the target')
     returns = returns.pivot(index='date', columns='stock_name', values='simple_ret')
     returns = returns.dropna(axis=1, how='any')

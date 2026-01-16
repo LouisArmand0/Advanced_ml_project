@@ -25,10 +25,8 @@ class LSTM_GAT_Model(nn.Module):
         """
         super(LSTM_GAT_Model, self).__init__()
         
-        # --- 1. Temporal Layer (LSTM) ---
-        # The LSTM processes the time-series of each stock independently.
-        # It captures 'Momentum' and 'Mean reversion' patterns.
-        # input_shape: (Batch, Sequence_Length, Features)
+
+        # Temporal Layer (LSTM) 
         self.lstm = nn.LSTM(
             input_size=num_features, 
             hidden_size=hidden_dim, 
@@ -36,22 +34,21 @@ class LSTM_GAT_Model(nn.Module):
             batch_first=True
         )
         
-        # --- 2. Spatial Layer (Graph Attention Network) ---
-        # The GAT allows stocks to 'talk' to each other based on the graph structure (Edge Index).
-        # It captures 'Sector effects' and 'Market Contagion'.
-        # We use GATv2Conv (more expressive than standard GAT).
+
+        # Spatial Layer (Graph Attention Network) 
         self.gat = GATv2Conv(
-            in_channels=hidden_dim,     # Input is the output of the LSTM
-            out_channels=hidden_dim,    # Output size
-            heads=num_heads,            # Number of parallel attention mechanisms
+            in_channels=hidden_dim,    
+            out_channels=hidden_dim,   
+            heads=num_heads,            
             concat=False,          
             dropout=dropout
         )
         
-        # --- 3. Prediction Layer ---
-        # A simple linear regression to map the final embedding to a return prediction.
+
+        # Prediction Layer 
         self.dropout = nn.Dropout(dropout)
         self.predictor = nn.Linear(hidden_dim, 1)
+
 
     def forward(self, x, edge_index, edge_weight=None):
         """
@@ -67,20 +64,12 @@ class LSTM_GAT_Model(nn.Module):
         """
         
 
-        # TEMPORAL EMBEDDING (LSTM)
-        # We pass the history of each stock through the LSTM.
-        # We only care about the last hidden state (h_n), which summarizes the whole window.
-        # self.lstm returns: output, (h_n, c_n)
+        # Temporal embedding (LSTM)
         _, (h_n, _) = self.lstm(x)
-        
-        # h_n shape is [1, Num_Stocks, Hidden_Dim]. We remove the first dimension.
-        # 'temporal_embeddings' represents the individual state of each stock.
         temporal_embeddings = h_n[-1]
         
 
-        # SPATIAL AGGREGATION (GAT)
-        # Now, stocks exchange information with their neighbors defined in 'edge_index'.
-        # (if Apple and Microsoft are connected, Apple will update its state based on Microsoft's state)
+        # Spatial aggregation (GAT)
         spatial_embeddings = self.gat(
             temporal_embeddings, 
             edge_index, 
@@ -94,9 +83,7 @@ class LSTM_GAT_Model(nn.Module):
         spatial_embeddings = self.dropout(spatial_embeddings)
         
  
-        # STEP 3: FINAL PREDICTION
-        # Project the enriched embeddings to a single scalar (expected return).
+        # Final prediction
         prediction = self.predictor(spatial_embeddings)
         
-        # Remove extra dimensions to get a flat vector of size [Num_Stocks]
         return prediction.squeeze()

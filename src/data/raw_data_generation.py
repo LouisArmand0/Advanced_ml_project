@@ -23,11 +23,8 @@ def clean_text(s):
         return s
 
     s = unicodedata.normalize("NFKD", s)
-    # Remove footnote markers [1], [a], etc.
     s = re.sub(r"\[.*?\]", "", s)
-    # Replace weird spaces like \xa0
     s = s.replace("\xa0", " ")
-    # Strip whitespace
     return s.strip()
 
 def get_tickers_sector_from_wp(index_name: str = 'S&P 100'):
@@ -40,7 +37,7 @@ def get_tickers_sector_from_wp(index_name: str = 'S&P 100'):
     reader = wp.page(index_name).html().encode('UTF-8')
     stocks = pd.read_html(reader)[2]
 
-    #Cleaning and renaming
+    # Cleaning and renaming
     stocks = stocks[stocks["Symbol"] != "GOOG"]
     stocks.loc["GOOGL", "Name"] = "Alphabet"
     stocks["Symbol"] = stocks["Symbol"].str.replace(".", "-", regex=False)
@@ -54,8 +51,8 @@ def get_tickers_sector_from_wp(index_name: str = 'S&P 100'):
 
 def get_historical_prices(stock_list: List[str], start_date: str, end_date: str):
     """
-    :param stock_list: List of stock to get historical prices
-    :return: Dataframe of historical prices (open, low, high, close, volume)
+    :param stock_list: list of stock to get historical prices
+    :return: dataframe of historical prices (open, low, high, close, volume)
     for a given tickers list
     """
     df = yf.download(
@@ -69,12 +66,12 @@ def get_historical_prices(stock_list: List[str], start_date: str, end_date: str)
 
 if __name__ == "__main__":
 
-    #Generate and save the csv file of the tickers list and the company sector
+    # Generate and save the csv file of the tickers list and the company sector
     trading_universe = get_tickers_sector_from_wp()
     trading_universe.to_parquet(f"{DATA_DIR}/trading_universe.parquet", index=True)
 
-    #Generate the csv file of historical prices for the considered trading universe
-    tickers_list = get_tickers_sector_from_wp()['symbol'].to_list() + ["^GSPC"] #also download S&P 500 prices
+    # Generate the csv file of historical prices for the considered trading universe
+    tickers_list = get_tickers_sector_from_wp()['symbol'].to_list() + ["^GSPC"] # Also download S&P 500 prices
 
     for ticker in tickers_list:
         historical_prices = get_historical_prices([ticker], start_date='2010-01-01', end_date='2025-12-31')

@@ -4,7 +4,7 @@ import numpy as np
 import os
 import matplotlib.pyplot as plt
 
-from src.utils.features import getting_trading_universe, getting_data_for_ticker_list, compute_returns
+from utils.features import getting_trading_universe, getting_data_for_ticker_list, compute_returns
 
 
 def compute_adj_matrix_based_on_sector(sector_df: pd.DataFrame, plot: bool) -> nx.Graph:
