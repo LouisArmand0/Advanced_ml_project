@@ -34,22 +34,22 @@ def parse_feature(name):
     return ticker, feature_id, feature
 
 
-def run_backtest(h, n, X, y, returns):
-    logger.info(f"[START] gnn_{h}_{n}")
+def run_backtest(h, n, w, X, y, returns):
+    logger.info(f"[START] gnn_{h}_{n}_{w}")
 
     torch.manual_seed(42)
     np.random.seed(42)
 
     model = GNNRegressor_Multiple(
-        epochs=150,
-        window_size=21,
+        epochs=1,
+        window_size=w,
         hidden_dim=h,
         corr_threshold=0.5,
         num_heads=5,
         lr=0.05,
         loss=SharpeLoss(),
         nb_features_per_stock=21,
-        drop_out=0.0,
+        drop_out=0.25,
         num_layers_lstm=n,
     )
 
@@ -57,17 +57,17 @@ def run_backtest(h, n, X, y, returns):
         model=model,
         scaler=StandardScaler(),
         mvo=MeanVariance(),
-        name=f"gnn_{h}_{n}"
+        name=f"gnn_{h}_{n}_{w}"
     )
 
     bt.run(X, y, returns)
 
-    pnl = pd.DataFrame(bt.pnl_, columns=[f"gnn_{h}_{n}"])
+    pnl = pd.DataFrame(bt.pnl_, columns=[f"gnn_{h}_{n}_{w}"])
     sharpe = bt.pnl_.mean() / bt.pnl_.std()
 
-    logger.info(f"[END] gnn_{h}_{n} | Sharpe={sharpe:.3f}")
+    logger.info(f"[END] gnn_{h}_{n}_{w} | Sharpe={sharpe:.3f}")
 
-    return h, n, pnl, sharpe
+    return h, n, w, pnl, sharpe
 
 # setting random seeds for reproducibility
 random.seed(42)
@@ -105,7 +105,7 @@ if __name__ == "__main__":
     X = compute_features(df, returns, wide=True)
     grouped_cols = sorted(X.columns.to_list(), key=parse_feature)
     X = X[grouped_cols]
-    X = X[X.index > "2012-01-01"]
+    X = X[X.index > "2020-01-01"]
 
     # target
     logger.info(f'Computing the target')
@@ -125,30 +125,32 @@ if __name__ == "__main__":
     returns = returns.loc[common_index]
 
 
-    params = [(h, n) for h in [32] for n in range(3, 4)]
+    params = [(h, n, w) for h in [32] for n in range(3, 4) for w in [63]]
 
     pnl_list = []
     sharpe_dict = {}
 
     # limit workers if RAM is tight (e.g. max_workers=4)
-    with ProcessPoolExecutor(max_workers=4) as executor:
+    with ProcessPoolExecutor(max_workers=2) as executor:
         futures = [
-            executor.submit(run_backtest, h, n, X, y, returns)
-            for h, n in params
+            executor.submit(run_backtest, h, n, w, X, y, returns)
+            for h, n , w in params
         ]
 
         for future in as_completed(futures):
-            h, n, pnl, sharpe = future.result()
+            h, n,w, pnl, sharpe = future.result()
             pnl_list.append(pnl)
-            sharpe_dict[(h, n)] = sharpe
+            sharpe_dict[(h, n, w)] = sharpe
 
     pnl = pd.concat(pnl_list, axis=1)
+
+    pnl.to_csv(RESULTS_DIR /'pnl.csv')
     cumsum_pnl = pnl.cumsum()
 
     plt.figure(figsize=(12, 6))
 
-    for (h, n), sharpe in sharpe_dict.items():
-        col = f"gnn_{h}_{n}"
+    for (h, n, w), sharpe in sharpe_dict.items():
+        col = f"gnn_{h}_{n}_{w}"
         plt.plot(
             cumsum_pnl.index,
             cumsum_pnl[col].values,
@@ -163,3 +165,5 @@ if __name__ == "__main__":
     plt.tight_layout()
     plt.savefig(RESULTS_DIR / "cumulative_pnl.png", dpi=300, bbox_inches="tight")
     plt.close()
+
+    print('finished')
