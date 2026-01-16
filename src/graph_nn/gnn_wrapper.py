@@ -313,6 +313,8 @@ class GNNRegressor_Multiple(BaseEstimator, RegressorMixin):
 
                 # Forward
                 out = self.model(x_t, self.edge_index)
+                out = out - out.mean()
+                out = out / out.abs().sum()
                 loss = criterion(out, y_t)
                 total_train_loss += loss.item()
 
@@ -335,6 +337,8 @@ class GNNRegressor_Multiple(BaseEstimator, RegressorMixin):
                         y_val_t = y_val[t].to(self.device)
 
                         val_out = self.model(x_val_t, self.edge_index)
+                        val_out = val_out - val_out.mean()
+                        val_out = val_out / val_out.abs().sum()
                         val_loss = criterion(val_out, y_val_t)
                         total_val_loss += val_loss.item()
 
@@ -372,6 +376,8 @@ class GNNRegressor_Multiple(BaseEstimator, RegressorMixin):
             for t in range(X_test.shape[0]):
                 x_t = X_test[t].to(self.device)
                 pred_t = self.model(x_t, self.edge_index)
+                pred_t = pred_t - pred_t.mean()
+                pred_t = pred_t / pred_t.abs().sum()
                 preds_list.append(pred_t.cpu())
 
         preds = torch.stack(preds_list)  # [Samples - window_size, Stocks]
