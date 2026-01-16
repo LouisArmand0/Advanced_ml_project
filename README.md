@@ -10,7 +10,7 @@ We extend their work by combining GNNs with factor-based momentum strategies and
 
 - **`graph_nn/`**  
   Contains all scripts related to the creation of the adjacency matrix,  
-  the model (`.pt` Torch file), and the GNN wrapper that makes the model compatible with `sklearn`'s `fit`/`predict` framework.
+  the model definition file, and the GNN wrapper that makes the model compatible with `sklearn`'s `fit`/`predict` framework.
 
 - **`utils/`**  
   Helper functions used throughout the project:  
@@ -20,7 +20,7 @@ We extend their work by combining GNNs with factor-based momentum strategies and
   - `mv_estimator.py`: Vectorized implementation of Mean-Variance portfolio optimization.
 
 - **Main script**  
-  `hyperparameter.py` is the main entry point. It trains models with different hyperparameter sets and compares their performance using the Walk-Forward backtest.
+  `hyperparameter_search.py` is the main entry point. It trains models with different hyperparameter sets and compares their performance using the Walk-Forward backtest.
 
 
 ### Installation
