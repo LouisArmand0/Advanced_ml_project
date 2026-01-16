@@ -128,7 +128,7 @@ if __name__ == "__main__":
     returns = returns.loc[common_index]
 
 
-    params = [(h, n, w) for h in [32] for n in range(3, 4) for w in [63]]
+    params = [(h, n, w) for h in [32, 64] for n in range(3, 4) for w in [21]]
 
     pnl_list = []
     sharpe_dict = {}
