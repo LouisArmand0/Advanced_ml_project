@@ -8,7 +8,6 @@ import logging
 from pathlib import Path
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
-
 from sklearn.preprocessing import StandardScaler
 
 from graph_nn.gnn_wrapper import GNNRegressor_Multiple
@@ -27,7 +26,7 @@ def parse_feature(name):
     ticker = parts[-1]  # last part is ticker
     feature = "_".join(parts[:-1])  # everything before ticker
 
-    # optional numeric order if it exists
+    # Optional numeric order if it exists
     m = re.search(r"\d+", feature)
     feature_id = int(m.group()) if m else float("inf")
 
@@ -69,12 +68,12 @@ def run_backtest(h, n, w, X, y, returns):
 
     return h, n, w, pnl, sharpe
 
-# setting random seeds for reproducibility
+# Setting random seeds for reproducibility
 random.seed(42)
 np.random.seed(42)
 torch.manual_seed(42)
 
-# init logger
+# Init logger
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s"
@@ -96,11 +95,11 @@ if __name__ == "__main__":
     ticker_list = [col.split('_')[0] for col in df.columns if col != 't_close']
     logger.info(f'Data loaded for {len(ticker_list)} tickers')
 
-    # computing the returns
+    # Computing the returns
     returns = compute_returns(df, 'simple')
     returns = returns.dropna(axis=1)
 
-    # computing the features based on returns
+    # Computing the features based on returns
     logger.info('Computing the features...')
     X = compute_features(df, returns, wide=True)
     grouped_cols = sorted(X.columns.to_list(), key=parse_feature)
@@ -109,13 +108,13 @@ if __name__ == "__main__":
     X = X[[c for c in X.columns if c not in spy_cols]]
     X = X[("2012-01-01" <= X.index ) & (X.index < "2020-01-01")]
 
-    # target
+    # Target
     logger.info(f'Computing the target')
     returns = returns.pivot(index='date', columns='stock_name', values='simple_ret')
     returns = returns.dropna(axis=1, how='any')
     returns = returns[[c for c in returns.columns if c != 'SPY']]
 
-    #VOLATILITY TARGET
+    # Volatility traget 
     TARGET_VOL = 0.15
     returns = (returns / returns.std()) * TARGET_VOL
 
@@ -127,13 +126,12 @@ if __name__ == "__main__":
     y = y.loc[common_index]
     returns = returns.loc[common_index]
 
-
     params = [(h, n, w) for h in [32, 64] for n in range(2, 4) for w in [21]]
 
     pnl_list = []
     sharpe_dict = {}
 
-    # limit workers if RAM is tight (e.g. max_workers=4)
+    # Limit workers if RAM is tight 
     with ProcessPoolExecutor(max_workers=2) as executor:
         futures = [
             executor.submit(run_backtest, h, n, w, X, y, returns)

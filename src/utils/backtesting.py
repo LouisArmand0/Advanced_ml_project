@@ -84,7 +84,7 @@ class Backtester:
         return self.pnl_
 
 
-### BACKTEST ENGINE FOR GNN ###
+# Backtest engine for GNN 
 def yearly_walkforward_splits(dates, train_years=1, test_years=1):
     years = dates.year.unique()
     for i in range(len(years) - train_years - test_years + 1):
@@ -99,7 +99,7 @@ def yearly_walkforward_splits(dates, train_years=1, test_years=1):
 
 @dataclass
 class WalkForwardBacktester:
-    model: object              # your GNN
+    model: object             
     mvo: object
     scaler: object
     pred_lag: int = 1

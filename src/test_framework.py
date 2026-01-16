@@ -18,9 +18,8 @@ from utils.estimators import LinearRegression, MultiLGBMRegressor
 from utils.backtesting import Backtester
 from utils.mv_estimator import MeanVariance
 
-
-
 import logging
+
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger()
 
@@ -108,8 +107,6 @@ def compute_features(ret, wide=True):
         X = pd.concat(wide_list, axis=1).dropna(axis=1, how='any')
     return X
 
-
-
 if __name__ == '__main__':
     trading_universe = getting_trading_universe()['symbol'].to_list()
     ticker_list = [ticker for ticker in trading_universe if ticker != 'SPY']
@@ -141,8 +138,7 @@ if __name__ == '__main__':
     ret = ret.pivot(index='date', columns='stock_name', values='simple_ret')
     ret = ret.loc[X.index]
     ret = ret[y.columns]
-
-
+    
     benchmark = (
         Backtester(MeanVariance(), name="benchmark")
         .compute_holdings(y,y,ret)

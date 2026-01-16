@@ -163,7 +163,7 @@ X = returns.pivot(index='date', columns='stock_name', values='log_ret').dropna()
 y = X.shift(-1).dropna()
 X = X.iloc[:-1]
 
-print(f"      Data Ready: {X.shape[0]} days, {X.shape[1]} stocks.")
+print(f"Data Ready: {X.shape[0]} days, {X.shape[1]} stocks.")
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, shuffle=False)
 
@@ -218,6 +218,3 @@ plt.title("Cross-Sectional Momentum: Compare Hidden Dimensions")
 plt.legend()
 plt.grid(True)
 plt.show()
-
-
-

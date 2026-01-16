@@ -14,7 +14,7 @@ import numpy as np
 import torch
 import random
 
-#setting random seeds for reproducibility
+# Setting random seeds for reproducibility
 random.seed(42)
 np.random.seed(42)
 torch.manual_seed(42)
@@ -24,7 +24,7 @@ def parse_feature(name):
     ticker = parts[-1]              # last part is ticker
     feature = "_".join(parts[:-1])  # everything before ticker
 
-    # optional numeric order if it exists
+    # Optional numeric order if it exists
     m = re.search(r"\d+", feature)
     feature_id = int(m.group()) if m else float("inf")
 
@@ -65,26 +65,26 @@ df = getting_data_for_ticker_list(ticker_list + market_ticker)
 df = df.dropna(axis=1, how='any')
 ticker_list = [col.split('_')[0] for col in df.columns if col != 't_close']
 
-#computing the returns
+# Computing the returns
 returns = compute_returns(df, 'simple')
 returns = returns.dropna(axis=1)
-#computing the features based on returns
+# Computing the features based on returns
 X = compute_features(returns, wide=True)
 grouped_cols = sorted(X.columns.to_list(), key=parse_feature)
 X = X[grouped_cols]
-#target
+# Target
 returns = returns.pivot(index='date', columns='stock_name', values='simple_ret')
 returns = returns.dropna(axis=1, how='any')
 y = returns.shift(-1)[:-1]
 
-#Aligning on all the dates
+# Aligning on all the dates
 common_index = X.index.intersection(y.index)
 X = X.loc[common_index]
 y = y.loc[common_index]
 returns = returns.loc[common_index]
 
 print(returns.shape, X.shape, y.shape)
-print(f"      Data Ready: {returns.shape[0]} days, {returns.shape[1]} stocks.")
+print(f"Data Ready: {returns.shape[0]} days, {returns.shape[1]} stocks.")
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, shuffle=False)
 ret_train, ret_test = train_test_split(returns, test_size=0.2, random_state=42, shuffle=False)
@@ -141,7 +141,6 @@ for h in hidden_dims:
     plt.plot(model.val_losses, label="Validation Loss")
     plt.legend()
     plt.show()
-
 
 plt.figure(figsize=(12, 6))
 for h, cum_ret in cum_returns_dict.items():

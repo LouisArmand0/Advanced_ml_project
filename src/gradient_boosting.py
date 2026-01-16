@@ -7,8 +7,8 @@ from src.utils.features import (compute_vol_adjusted_returns,
                                compute_beta_to_market,
                                compute_macd, compute_cti,
                                compute_alpha_variance_ratio,
-                            getting_trading_universe,
-                            getting_data_for_ticker_list)
+                               getting_trading_universe,
+                               getting_data_for_ticker_list)
 import matplotlib.pyplot as plt
 import logging
 
@@ -19,35 +19,31 @@ def negative_portfolio_sharpe_loss(R: np.ndarray):
     """
     Custom loss to minimize portfolio sharpe loss
     """
-    #To ensure numerical stability and avoid division by zero
+    # To ensure numerical stability and avoid division by zero
     eps = 1e-8
 
     T,N = R.shape
 
     def obj(preds_flat, dtrain):
         preds = preds_flat.reshape(T,N)
-        p = (preds * R).sum(axis=1) #vector of portfolio returns
+        p = (preds * R).sum(axis=1) # vector of portfolio returns
 
         mean = np.mean(p)
-        var = ((p - mean) ** 2).sum() / (T - 1) #unbiased variance estimator
+        var = ((p - mean) ** 2).sum() / (T - 1) # unbiased variance estimator
         std = np.sqrt(var + eps)
 
-        # gradient wrt p_t
+        # Gradient wrt p_t
         dL_dp = (-1 / (T * std)) + (mean * (p - mean)) / (T * (std ** 3))
 
-        # chain rule: grad wrt s_{t,i}
-        grad = dL_dp.to_numpy()[:, None] * R.values #shape (T, N)
+        # Chain rule: grad wrt s_{t,i}
+        grad = dL_dp.to_numpy()[:, None] * R.values # shape (T, N)
 
-        # approximate hessian
+        # Approximate hessian
         hess = np.ones_like(grad)
 
         return grad, hess
 
     return obj
-
-
-import numpy as np
-
 
 def softmax_longshort(x, temp=1.0):
     x = x - x.mean()
@@ -61,7 +57,6 @@ def softmax_longshort(x, temp=1.0):
 
     w = pos - neg
     return w / np.sum(np.abs(w))
-
 
 if __name__ == "__main__":
 
@@ -141,7 +136,6 @@ if __name__ == "__main__":
     for alpha_var_df in alpha_var_list[1:]:
         alpha_var = pd.merge(alpha_var, alpha_var_df, on=['date', 'stock_name'], how='inner')
 
-
     # Setting data
     l = [beta_to_mkt, alpha_to_mkt, alpha_var, cti, macd]
     X_full = l[0]
@@ -161,7 +155,7 @@ if __name__ == "__main__":
     T_total, N, d = len(dates), len(X_full.stock_name.unique()), len(X_full.columns)
     np.random.seed(42)
 
-        # total window size
+    # Total window size
     val_size = 252     # last 5 days used as validation
     step = 252
     num_round = 100
@@ -182,22 +176,22 @@ if __name__ == "__main__":
         val_start_idx = train_end_idx
         val_end_idx = val_start_idx + val_size
 
-        # select dates
+        # Select dates
         train_dates = dates[:train_end_idx]  # expanding window
         val_dates = dates[val_start_idx:val_end_idx]
 
-        # training data
+        # Training data
         train_mask = y_full['date'].isin(train_dates)
         X_train = X_full.loc[train_mask].drop(columns=['date', 'stock_name'], axis=1)
         y_train = y_full.loc[train_mask]['target'].values
 
-        # group sizes per date
+        # Group sizes per date
         train_group = y_full.loc[train_mask].groupby('date').size().to_list()
 
         dtrain = xgb.DMatrix(X_train, label=y_train)
         dtrain.set_group(train_group)
 
-        # validation data
+        # Validation data
         val_mask = y_full['date'].isin(val_dates)
         X_val = X_full.loc[val_mask].drop(columns=['date', 'stock_name'], axis=1)
         y_val = y_full.loc[val_mask]['target'].values
@@ -206,9 +200,7 @@ if __name__ == "__main__":
         dval = xgb.DMatrix(X_val, label=y_val)
         dval.set_group(val_group)
 
-
-
-        # train model
+        # Train model
         bst = xgb.train(
             params,
             dtrain,
@@ -217,12 +209,12 @@ if __name__ == "__main__":
             verbose_eval=False
         )
 
-        # predictions on validation set
+        # Predictions on validation set
         preds = bst.predict(dval)
         val_df = y_full.loc[val_mask][['date','target']]
         val_df['pred'] = preds
 
-        # compute weights per date
+        # Compute weights per date
 
         weights = []
         for date, group in val_df.groupby('date'):

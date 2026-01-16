@@ -3,10 +3,7 @@ import pandas as pd
 import torch
 import torch.nn as nn
 from sklearn.base import BaseEstimator, RegressorMixin
-
-# Import our custom PyTorch model
 from src.graph_nn.gnn_model import LSTM_GAT_Model
-# Import the function to build the graph
 
 class GNNRegressor_Multiple(BaseEstimator, RegressorMixin):
     """
@@ -22,19 +19,19 @@ class GNNRegressor_Multiple(BaseEstimator, RegressorMixin):
         """
         Hyperparameters for the model and training process.
         """
-        self.window_size = window_size      # Lookback period (e.g., 20 days) for the LSTM
-        self.hidden_dim = hidden_dim        # Size of the internal neural network layers
-        self.num_heads = num_heads          # Number of attention heads for the GAT
-        self.epochs = epochs                # How many times we iterate over the data
-        self.lr = lr                        # Learning rate (speed of learning)
+        self.window_size = window_size       # Lookback period for the LSTM
+        self.hidden_dim = hidden_dim         # Size of the internal neural network layers
+        self.num_heads = num_heads           # Number of attention heads for the GAT
+        self.epochs = epochs                 # How many times we iterate over the data
+        self.lr = lr                         # Learning rate (speed of learning)
         self.corr_threshold = corr_threshold # Minimum correlation to create an edge in the graph
         self.loss = loss
         self.nb_features_per_stock = nb_features_per_stock
         self.drop_out = drop_out
         self.num_layers_lstm = num_layers_lstm
         
-        self.model = None                   # The actual PyTorch model
-        self.edge_index = None              # The graph structure
+        self.model = None                     # The actual PyTorch model
+        self.edge_index = None                # The graph structure
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
@@ -59,7 +56,7 @@ class GNNRegressor_Multiple(BaseEstimator, RegressorMixin):
         # Create adjacency matrix: 1 if correlated, 0 otherwise
         adj_matrix = np.where(np.abs(corr_df.values) >= self.corr_threshold, 1, 0)
         
-        # Convert to PyTorch Geometric format (Edge Index: [2, Num_Edges])
+        # Convert to PyTorch Geometric format 
         rows, cols = np.where(adj_matrix == 1)
         return torch.tensor([rows, cols], dtype=torch.long).to(self.device)
 
@@ -105,16 +102,16 @@ class GNNRegressor_Multiple(BaseEstimator, RegressorMixin):
         Standard Scikit-Learn 'fit' method.
         This is called by the Backtester to train the model on historical data.
         """
-        # 1. Build the Graph (Dynamically based on current X)
+        # Build the Graph (dynamically based on current X)
         self.edge_index = self._prepare_graph(ret)
         self.num_stocks = ret.shape[1]
         
-        # 2. Prepare Data (Sliding Window)
+        # Prepare Data (sliding Window)
         X_train, y_train = self._prepare_tensors(X, y)
         if X_val is not None and y_val is not None:
             X_val, y_val = self._prepare_tensors(X_val, y_val)
 
-        # 3. Initialize the PyTorch Model
+        # Initialize the PyTorch Model
         self.model = LSTM_GAT_Model(
             num_features= self.nb_features_per_stock, #nb of features per stock
             hidden_dim=self.hidden_dim,
@@ -123,7 +120,7 @@ class GNNRegressor_Multiple(BaseEstimator, RegressorMixin):
             num_layers_lstm=self.num_layers_lstm,
         ).to(self.device)
         
-        # 4. Training Loop (Standard PyTorch procedure)
+        # Training Loop (standard PyTorch procedure)
         optimizer = torch.optim.Adam(self.model.parameters(), lr=self.lr)
         criterion = self.loss
 
@@ -153,7 +150,7 @@ class GNNRegressor_Multiple(BaseEstimator, RegressorMixin):
             avg_train_loss = total_train_loss / X_train.shape[0]
             train_losses.append(avg_train_loss)
 
-            # --- Validation loss ---
+            # Validation loss 
             if X_val is not None and y_val is not None:
                 self.model.eval()
                 total_val_loss = 0

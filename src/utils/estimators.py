@@ -4,7 +4,6 @@ from sklearn.multioutput import MultiOutputRegressor
 from lightgbm.sklearn import LGBMRegressor
 
 
-
 def add_transform_method(cls):
     def transform(self, X):
         return self.predict(X)
