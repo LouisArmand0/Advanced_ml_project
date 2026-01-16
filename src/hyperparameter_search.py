@@ -41,12 +41,12 @@ def run_backtest(h, n, w, X, y, returns):
     np.random.seed(42)
 
     model = GNNRegressor_Multiple(
-        epochs=1,
+        epochs=250,
         window_size=w,
         hidden_dim=h,
         corr_threshold=0.5,
         num_heads=5,
-        lr=0.05,
+        lr=0.001,
         loss=SharpeLoss(),
         nb_features_per_stock=21,
         drop_out=0.25,
@@ -107,7 +107,7 @@ if __name__ == "__main__":
     X = X[grouped_cols]
     spy_cols = [c for c in X.columns if c.endswith("_SPY")]
     X = X[[c for c in X.columns if c not in spy_cols]]
-    X = X[X.index > "2020-01-01"]
+    X = X[("2012-01-01" <= X.index ) & (X.index < "2020-01-01")]
 
     # target
     logger.info(f'Computing the target')
@@ -128,7 +128,7 @@ if __name__ == "__main__":
     returns = returns.loc[common_index]
 
 
-    params = [(h, n, w) for h in [32, 64] for n in range(3, 4) for w in [21]]
+    params = [(h, n, w) for h in [32, 64] for n in range(2, 4) for w in [21]]
 
     pnl_list = []
     sharpe_dict = {}

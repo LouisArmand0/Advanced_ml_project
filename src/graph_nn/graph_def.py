@@ -4,6 +4,9 @@ import numpy as np
 import os
 import matplotlib.pyplot as plt
 
+from src.utils.features import getting_trading_universe, getting_data_for_ticker_list, compute_returns
+
+
 def compute_adj_matrix_based_on_sector(sector_df: pd.DataFrame, plot: bool) -> nx.Graph:
         adj_matrix = np.array([
             [sector_df.loc[stock1, 'sector'] == sector_df.loc[stock2, 'sector'] * (stock1 != stock2) for stock1 in sector_df.index]
@@ -49,12 +52,19 @@ def compute_adj_matrix_based_on_correlation(ret_df: pd.DataFrame, threshold: flo
 
 
 if __name__ == '__main__':
-    file_path = os.path.join(os.path.dirname(__file__), '../data/raw/trading_universe.csv')
-    sector_df = pd.read_csv(file_path).set_index('symbol')
-    adj_matrix, graph_sector = compute_adj_matrix_based_on_sector(sector_df, True)
+    trading_universe = getting_trading_universe()
+    ticker_list = [ticker for ticker in trading_universe.symbol if ticker != 'SPY']
+    trading_universe = trading_universe.set_index('symbol')
+    adj_matrix, graph_sector = compute_adj_matrix_based_on_sector(trading_universe, True)
 
-    file_path = os.path.join(os.path.dirname(__file__), '../data/raw/historical_prices.csv')
-    ret_df = pd.read_csv(file_path).set_index(['Date'])
-    ret_df = ret_df.filter(like="_close")
-    adj, graph_corr = compute_adj_matrix_based_on_correlation(ret_df, .85, True)
+
+    market_ticker = ["SPY"]
+
+    df = getting_data_for_ticker_list(ticker_list + market_ticker)
+    returns = compute_returns(df, 'simple')
+    returns = returns.dropna(axis=1)
+    returns = returns.pivot(index='date', columns='stock_name', values='simple_ret')
+    returns = returns.dropna(axis=1, how='any')
+    returns = returns[[c for c in returns.columns if c != 'SPY']]
+    adj, graph_corr = compute_adj_matrix_based_on_correlation(returns, .5, True)
 
