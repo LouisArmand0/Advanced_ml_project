@@ -105,12 +105,15 @@ if __name__ == "__main__":
     X = compute_features(df, returns, wide=True)
     grouped_cols = sorted(X.columns.to_list(), key=parse_feature)
     X = X[grouped_cols]
+    spy_cols = [c for c in X.columns if c.endswith("_SPY")]
+    X = X[[c for c in X.columns if c not in spy_cols]]
     X = X[X.index > "2020-01-01"]
 
     # target
     logger.info(f'Computing the target')
     returns = returns.pivot(index='date', columns='stock_name', values='simple_ret')
     returns = returns.dropna(axis=1, how='any')
+    returns = returns[[c for c in returns.columns if c != 'SPY']]
 
     #VOLATILITY TARGET
     TARGET_VOL = 0.15
